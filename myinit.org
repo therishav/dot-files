@@ -1,0 +1,400 @@
+* encoding
+  Everything needs to be UTF-8. I have to be careful when opening files from sources other than my systems but in general, UTF-8 is preferred everywhere
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (global-set-key (kbd "C-h") 'delete-backward-char)
+  (global-set-key (kbd "C-?") 'help-command)
+
+#+END_SRC
+* interface tweaks
+#+BEGIN_SRC emacs-lisp
+  (setq inhibit-startup-message t)
+  (setq inhibit-startup-screen t)
+  (global-visual-line-mode +1)
+
+  (fset 'yes-or-no-p 'y-or-n-p)
+  (global-set-key (kbd "<f5>") 'revert-buffer)
+
+  (menu-bar-mode -1)
+  (toggle-scroll-bar -1)
+  (tool-bar-mode -1)
+  (blink-cursor-mode -1)
+
+  (global-hl-line-mode +1)
+  ;; (line-number-mode +1)
+  ;; (global-display-line-numbers-mode 1)
+  (column-number-mode t)
+  (size-indication-mode t)
+
+  ;; Font set
+  (set-frame-font "Hack 12" nil t)
+
+  ;; If I edit a file outside of Emacs, the default setting is for Emacs to ask you to reload the file manually. I task Emacs to ;; ;; reload the file automatically.
+
+  (global-auto-revert-mode t)
+
+  ;; tabs are 4 spaces
+  (setq-default tab-width 4
+                indent-tabs-mode nil)
+
+  ;; Accidental whitespaces are annoying. And I let Emacs know it. So it cleans up behind me when I save a file.
+  (add-hook 'before-save-hook 'whitespace-cleanup)
+
+  ;; iedit bug fix
+  (define-key global-map (kbd "C-c ;") 'iedit-mode)
+#+END_SRC
+
+#+RESULTS:
+
+* modeline
+The model-line has the current file’s name but the path to the current file is still a few keystrokes away. The title bar can be used to show the full path of the current file, so lets set that up.
+#+BEGIN_SRC emacs-lisp
+  (setq frame-title-format
+    '((:eval (if (buffer-file-name)
+     (abbreviate-file-name (buffer-file-name))
+     "%b"))))
+
+  (use-package smart-mode-line-powerline-theme
+    :ensure t)
+
+  ;; (use-package smart-mode-line
+  ;;   :ensure t
+  ;;   :config
+  ;;   (setq sml/theme 'light)
+  ;;   (add-hook 'after-init-hook 'sml/setup))
+#+END_SRC
+
+* scrolling
+Default scrolling has some wierd quirks in Emacs, so I set margins that trigger scroll to zero and preserve screen position when jumping around.
+#+BEGIN_SRC emacs-lisp
+  (setq scroll-margin 0
+    scroll-conservatively 100000
+    scroll-preserve-screen-position 1)
+
+#+END_SRC
+
+* try
+#+BEGIN_SRC emacs-lisp
+(use-package try
+    :ensure t)
+#+END_SRC
+
+* which key
+Given the thousands of commands at your disposal, its only reasonable to have a package help you figure out the next keystroke. which-key package opens a small buffer at the bottom with suggestions for next keystroke and possible commands that are available.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :ensure t
+    :diminish which-key-mode
+    :config
+    (which-key-mode +1))
+#+END_SRC
+
+* themes
+One of the things I liked about Visual Studio Code editor was the default theme. Fortunately there’s an Emacs package for it. Doom-one is my go to modern minimal theme. We also disable the default warning audio bell and replace it with a visual “bell” where only the mode-line flashes to warn you about something.
+#+BEGIN_SRC emacs-lisp
+  (use-package doom-themes
+    :config
+    ;; Global settings (defaults)
+    ;; (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+    ;;   doom-themes-enable-italic t) ; if nil, italics is universally disabled
+    ;; (load-theme 'doom-molokai t)
+
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
+
+    ;; Enable custom neotree theme (all-the-icons must be installed!)
+    (doom-themes-neotree-config))
+    ;; or for treemacs users
+    ;; (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
+    ;; (doom-themes-treemacs-config)
+
+    ;; Corrects (and improves) org-mode's native fontification.
+    ;; (doom-themes-org-config))
+#+END_SRC
+
+* Backups
+  Emacs likes to strew its backup and temporary files everywhere. Lets give them a home in the temporary file directory.
+
+#+BEGIN_SRC emacs-lisp
+  ;; setting up the backup directory
+
+  (setq backup-directory-alist
+    `((".*" . ,temporary-file-directory)))
+  (setq auto-save-file-name-transforms
+    `((".*" ,temporary-file-directory t)))
+#+END_SRC
+
+* neotree
+
+#+BEGIN_SRC emacs-lisp
+  (require 'neotree)
+  (global-set-key [f8] 'neotree-toggle)
+  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+
+#+END_SRC
+
+* diminish
+  Diminish lets you hide minor modes from showing in the mode line, keeping it minimal.
+#+BEGIN_SRC emacs-lisp
+  (use-package diminish
+    :ensure t)
+#+END_SRC
+
+* smartparens
+Smartparens is a minor-mode for dealing with paren pairs in Emacs. It inserts them in pairs, deletes them in pairs, highlights them and generally makes life easier when dealing with braces, quotes and the like.
+#+BEGIN_SRC emacs-lisp
+  (use-package smartparens
+    :ensure t
+    :diminish smartparens-mode
+    :config
+    (progn
+      (require 'smartparens-config)
+      (smartparens-global-mode 1)
+      (show-paren-mode t)))
+#+END_SRC
+
+* expand-region
+Selecting a region becomes smarter with expand region which keeps selecting an increasing region based on dwim syntax.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package expand-region
+    :ensure t
+    :bind ("M-m" . er/expand-region))
+#+END_SRC
+
+* crux
+Some useful defaults are provided by the crux package of Prelude fame. “C-k” now kills a line if nothing is selected. “C-a” now toggles between first letter on the line, or beginning of the line.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package crux
+    :ensure t
+    :bind
+    ("C-k" . crux-smart-kill-line)
+    ("C-c n" . crux-cleanup-buffer-or-region)
+    ("C-c f" . crux-recentf-find-file)
+    ("C-a" . crux-move-beginning-of-line))
+#+END_SRC
+
+* avy
+I can jump around in the current visual field using avy’s go to char.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package avy
+    :ensure t
+    :bind
+    ("C-=" . avy-goto-char)
+    :config
+    (setq avy-background t))
+
+#+END_SRC
+
+* flycheck
+
+I use company mode to provide completion and flycheck to do syntax checking and enable them globally.
+
+#+BEGIN_SRC emacs-lisp
+  ;; package initialize
+
+  (use-package flycheck
+    :ensure t
+    :diminish flycheck-mode
+    :config
+    (add-hook 'after-init-hook #'global-flycheck-mode))
+#+END_SRC
+
+* magit
+No project is begun without git and Emacs community’s integration with git through magit is unparalleled in its expanse and ease of use. Setting that up is just as easy. “C-M-g” now triggers a git status buffer for the current file’s repository.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package transient
+    :ensure t ; make sure it is installed
+    :demand t ; make sure it is loaded
+    )
+
+  (use-package magit
+    :bind (("C-M-g" . magit-status)))
+
+  (use-package magit-popup
+    :ensure t ; make sure it is installed
+    :demand t ; make sure it is loaded
+    )
+#+END_SRC
+
+* projectile
+
+Projectile is a project manager that lets you easily switch between files in a project and seamlessly between projects as well. I use it with helm which I set up below.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package projectile
+    :ensure t
+    :diminish projectile-mode
+    :bind
+    (("C-c p f" . helm-projectile-find-file)
+     ("C-c p p" . helm-projectile-switch-project)
+     ("C-c p s" . projectile-save-project-buffers))
+    :config
+    (projectile-mode +1)
+  )
+
+#+END_SRC
+
+* helm
+
+It is a dwim fuzzy completion framework for Emacs and makes navigating Emacs a much nicer experience overall. I like to setup Helm to be a comfortable 20 pts in height and bind the most frequent Emacs commands like “M-x” with the helm equivalents.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package helm
+    :ensure t
+    :defer 2
+    :bind
+    ("M-x" . helm-M-x)
+    ("C-x C-f" . helm-find-files)
+    ("M-y" . helm-show-kill-ring)
+    ("C-x b" . helm-mini)
+    :config
+    (require 'helm-config)
+    (helm-mode 1)
+    (setq helm-split-window-inside-p t
+      helm-move-to-line-cycle-in-source t)
+    (setq helm-autoresize-max-height 0)
+    (setq helm-autoresize-min-height 20)
+    (helm-autoresize-mode 1)
+    (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action) ; rebind tab to run persistent action
+    (define-key helm-map (kbd "C-i") 'helm-execute-persistent-action) ; make TAB work in terminal
+    (define-key helm-map (kbd "C-z")  'helm-select-action) ; list actions using C-z
+    )
+
+  ;; combining it with projectile to show project files through a helm fuzzy find interface
+  (use-package helm-projectile
+    :ensure t
+    :config
+    (helm-projectile-on))
+#+END_SRC
+
+* Daemon mode
+At the end I start the emacs server so that any new frames that I open, don't have to load the config from scratch.
+
+#+BEGIN_SRC emacs-lisp
+  (require 'server)
+  (if (not (server-running-p)) (server-start))
+#+END_SRC
+
+* org mode
+#+BEGIN_SRC emacs-lisp
+  (require 'org)
+  (define-key global-map "\C-cl" 'org-store-link)
+  (define-key global-map "\C-ca" 'org-agenda)
+  (setq org-log-done-with-time t)
+
+  ;; Automatically toggle org-mode latex fragment previews as the cursor enters and exits them
+  (add-hook 'org-mode-hook 'org-fragtog-mode)
+
+  ;; scale latex preview
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 3.0))
+
+  ;; ;; syntax highlight in org mode latex export
+  (setq org-latex-listings 'minted
+        org-latex-packages-alist '(("" "minted"))
+        org-latex-pdf-process
+        '("pdflatex -shell-escape -output-directory %o %f"
+          "biber %b"
+          "pdflatex -shell-escape -output-directory %o %f"
+          "pdflatex -shell-escape -output-directory %o %f"))
+
+  (require 'color)
+  (set-face-attribute 'org-block nil :background
+                      (color-darken-name
+                       (face-attribute 'default :background) 3))
+#+END_SRC
+
+* Yasnippets
+#+BEGIN_SRC emacs-lisp
+  ;; ;; start yasnippets with emacs
+  (require 'yasnippet)
+  (yas-global-mode 1)
+
+  (use-package yasnippet-snippets
+    :ensure t)
+  (use-package yasnippet-classic-snippets
+    :ensure t)
+#+END_SRC
+
+* autocomplete
+
+#+BEGIN_SRC emacs-lisp
+
+  ; start auto-complete with emacs
+  (require 'auto-complete)
+  ; do default config for auto-complete
+  (require 'auto-complete-config)
+  (ac-config-default)
+
+  ; let's define a function which initializes auto-complete-c-headers and gets called for c/c++ hooks
+  (defun my:ac-c-header-init ()
+    (require 'auto-complete-c-headers)
+    (add-to-list 'ac-sources 'ac-source-c-headers)
+
+    (setq achead:include-directories
+          (append '("C://TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/5.1.0/include/c++"
+                    "C://TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/5.1.0/include")
+                  achead:include-directories)))
+
+  ; now let's call this function from c/c++ hooks
+  (add-hook 'c++-mode-hook 'my:ac-c-header-init)
+  (add-hook 'c-mode-hook 'my:ac-c-header-init)
+#+END_SRC
+* semantic
+#+BEGIN_SRC emacs-lisp
+  ;; semantic settings
+  ;; turn on semantic mode
+  (semantic-mode 1)
+  ;; lets define a funtion which adds  semantic as a suggestion backend to auto complete
+  ;; and hook this funtion to c-mode-commom-hook
+  (defun my:add-semantic-to-autocomplete()
+    (add-to-list 'ac-sources 'ac-source-semantic)
+    )
+  (add-hook 'c-mode-common-hook 'my:add-semantic-to-autocomplete)
+
+  ;; turn on ede mode
+  (global-ede-mode 1)
+  ;; create a project for our progeam .
+  (ede-cpp-root-project "my project" :file "c:/emacs/emacs-26.2-x86_64/bin/my_projects/src/main.cpp"
+                        :include-path '("/../my_inc"))
+  ; You can use system-include-path for setting up the system header file locations,
+  ;; turn on automatic reparsing of open buffers in semantic
+  (global-semantic-idle-scheduler-mode 1)
+
+#+END_SRC
+* js2 mode, xref and refactoring
+#+BEGIN_SRC emacs-lisp
+  ;; (require 'js2-mode)
+  ;; (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+
+  ;; ;; better imenu
+  ;; (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
+
+  ;; (require 'js2-refactor)
+  ;; (require 'xref-js2)
+
+  ;; (add-hook 'js2-mode-hook #'js2-refactor-mode)
+  ;; (js2r-add-keybindings-with-prefix "C-c C-r")
+  ;; (define-key js2-mode-map (kbd "C-k") #'js2r-kill)
+
+  ;; ;; js-mode (which js2 is based on) binds "M-." which conflicts with xref, so
+  ;; ;; unbind it.
+  ;; (define-key js-mode-map (kbd "M-.") nil)
+
+  ;; (add-hook 'js2-mode-hook (lambda ()
+  ;; (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+#+END_SRC
+* macros
+Some keybindings
+To compile cpp sol.cpp code and open eshell
+#+begin_src emacs-lisp
+  (fset 'cp\ compile
+     (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item (quote ([24 19 134217848 99 111 109 112 105 108 101 return S-home delete 103 43 43 32 115 111 108 46 99 112 112 32 45 115 116 100 61 99 43 43 49 49 return 134217848 101 115 104 101 108 108 return] 0 "%d")) arg)))
+#+end_src
